@@ -570,6 +570,18 @@
                         }
                     },
                     {
+                        "name": "rig_btn_morph",
+                        "type": "bool",
+                        "advanced": 1,
+                        "comment": "If enabled, pressing the button again when the rig is already selected will toggle the internal morph state instead of re-selecting the rig."
+                    },
+                    {
+                        "name": "momentary_morph",
+                        "type": "bool",
+                        "advanced": 1,
+                        "comment": "If enabled, the morph state is active only while the button is held down (momentary mode). Only relevant when rig_btn_morph is enabled."
+                    },
+                    {
                         "name": "auto_exclude_rigs",
                         "type": "any",
                         "advanced": 2
