@@ -59,6 +59,8 @@ DISPLAY_RIG_NAME = DisplayLabel(
     },
     callback = KemperRigNameCallback(
         show_rig_id = True
+        # strip_token defaults to True, so the ((...)) slot-assignment token used by
+        # EFFECT_STATE_DYNAMIC in inputs.py is not shown here.
     )
 )
 

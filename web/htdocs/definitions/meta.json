@@ -423,12 +423,18 @@
                 "parameters": []
             },
             {
-                "entityName": "EFFECT_STATE_PER_RIG",
+                "entityName": "EFFECT_STATE_DYNAMIC",
                 "category": "effects",
                 "target": "AdafruitSwitch",
                 "parameters": [
                     {
-                        "name": "slot_id",
+                        "name": "digit_position",
+                        "type": "any",
+                        "default": "1",
+                        "comment": "Digit position(s) read from the rig-name token (1-indexed). Single int, or a list of ints to control several slots together (AND logic)."
+                    },
+                    {
+                        "name": "default_slot_id",
                         "type": "select",
                         "values": [
                             {
@@ -478,13 +484,20 @@
                         ]
                     },
                     {
-                        "name": "rig_overrides",
-                        "type": "rig_map",
-                        "comment": "Per-rig slot override: for each listed rig, this button will control the chosen slot instead of the default one."
+                        "name": "token_start",
+                        "type": "text",
+                        "advanced": 1,
+                        "comment": "Start delimiter of the rig-name token."
+                    },
+                    {
+                        "name": "token_end",
+                        "type": "text",
+                        "advanced": 1,
+                        "comment": "End delimiter of the rig-name token."
                     }
                 ],
-                "comment": "Switch an effect slot on / off, with per-rig slot override. Assign a different effect slot for specific rigs so the same button always controls the right effect regardless of how rigs are organized on the Kemper.",
-                "importPath": "pyswitch.clients.kemper.actions.effect_state_per_rig"
+                "comment": "Switch an effect slot on / off, with the slot assigned dynamically from a token embedded in the Kemper rig name (e.g. a rig named \"Lead ((ACXR))\"). Rename rigs on the Kemper to reorganize which slot a button controls, with no PySwitch config change needed.",
+                "importPath": "pyswitch.clients.kemper.actions.effect_state_dynamic"
             },
             {
                 "entityName": "EFFECT_BUTTON",

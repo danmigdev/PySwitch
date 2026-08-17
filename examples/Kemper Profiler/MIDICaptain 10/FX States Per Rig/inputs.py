@@ -1,12 +1,14 @@
 from pyswitch.hardware.devices.pa_midicaptain_10 import *
 from pyswitch.clients.kemper import KemperEffectSlot
-from pyswitch.clients.kemper.actions.effect_state_per_rig import EFFECT_STATE_PER_RIG
+from pyswitch.clients.kemper.actions.effect_state_dynamic import EFFECT_STATE_DYNAMIC
 from pyswitch.clients.kemper.actions.rig_select import RIG_SELECT, RIG_SELECT_DISPLAY_TARGET_RIG
 from pyswitch.clients.kemper.actions.bank_up_down import BANK_UP, BANK_DOWN
 from display import DISPLAY_SWITCH_3, DISPLAY_SWITCH_4
 
-# Absolute rig IDs: (bank - 1) * 5 + (rig - 1)
-# Bank 1 in this example: 0 = acoustic, 1 = clean, 2 = crunch, 3 = heavy, 4 = lead
+# The slot(s) each switch controls are not configured here at all: they are read live from a
+# token embedded in the Kemper rig name (see the README for the rig names used in this example
+# and how to set them up on the device). Reorganizing which slot a switch controls on a given
+# rig only needs a rig rename on the Kemper, no redeploy of this file.
 
 Inputs = [
 
@@ -22,49 +24,39 @@ Inputs = [
         "actions": []
     },
 
-    # Switch 3 — flanger (slot X) for rigs clean(1), crunch(2), lead(4); off elsewhere
+    # Switch 3 — reads digit position 1 of the rig name token. No default: off on any rig
+    # whose name has no token (or a token shorter than 1 character).
     {
         "assignment": PA_MIDICAPTAIN_10_SWITCH_3,
         "actions": [
-            EFFECT_STATE_PER_RIG(
-                slot_id = None,
-                rig_overrides = {
-                    1: KemperEffectSlot.EFFECT_SLOT_ID_X,   # clean
-                    2: KemperEffectSlot.EFFECT_SLOT_ID_X,   # crunch
-                    4: KemperEffectSlot.EFFECT_SLOT_ID_X,   # lead
-                },
+            EFFECT_STATE_DYNAMIC(
+                digit_position = 1,
                 display = DISPLAY_SWITCH_3
             )
         ]
     },
 
-    # Switch 4 — modulation+compressor (slots MOD+C) for acoustic(0); slot X for heavy(3)
+    # Switch 4 — reads digit position 2. Falls back to slot C (Compressor) on any rig with no
+    # token / a too-short token, so most rigs get a sensible default without needing a token
+    # at all; only rigs that need something else get tagged.
     {
         "assignment": PA_MIDICAPTAIN_10_SWITCH_4,
         "actions": [
-            EFFECT_STATE_PER_RIG(
-                slot_id = None,
-                rig_overrides = {
-                    0: [KemperEffectSlot.EFFECT_SLOT_ID_MOD, KemperEffectSlot.EFFECT_SLOT_ID_C],  # acoustic
-                    3: KemperEffectSlot.EFFECT_SLOT_ID_X,                                          # heavy
-                },
+            EFFECT_STATE_DYNAMIC(
+                digit_position = 2,
+                default_slot_id = KemperEffectSlot.EFFECT_SLOT_ID_C,
                 display = DISPLAY_SWITCH_4
             )
         ]
     },
 
-    # Switch UP — delay (slot DLY) for acoustic(0); delay+reverb (DLY+REV) for clean/crunch/heavy(1,2,3)
+    # Switch UP — reads digit positions 3 and 4 together (AND logic): the LED is on only when
+    # both slots are engaged, and pressing turns both on or both off together.
     {
         "assignment": PA_MIDICAPTAIN_10_SWITCH_UP,
         "actions": [
-            EFFECT_STATE_PER_RIG(
-                slot_id = None,
-                rig_overrides = {
-                    0: KemperEffectSlot.EFFECT_SLOT_ID_DLY,                                          # acoustic
-                    1: [KemperEffectSlot.EFFECT_SLOT_ID_DLY, KemperEffectSlot.EFFECT_SLOT_ID_REV],   # clean
-                    2: [KemperEffectSlot.EFFECT_SLOT_ID_DLY, KemperEffectSlot.EFFECT_SLOT_ID_REV],   # crunch
-                    3: [KemperEffectSlot.EFFECT_SLOT_ID_DLY, KemperEffectSlot.EFFECT_SLOT_ID_REV],   # heavy
-                },
+            EFFECT_STATE_DYNAMIC(
+                digit_position = [3, 4],
                 display = None
             )
         ]

@@ -1,14 +1,38 @@
 ## Example Description
 
-This demonstrates `EFFECT_STATE_PER_RIG`: assigning a different Kemper effect slot to the same
-switch depending on which rig is currently active, so a button keeps controlling "the delay" or
-"the modulation effect" even when different rigs put those effects in different slots.
+This demonstrates `EFFECT_STATE_DYNAMIC`: a switch controls a different Kemper effect slot
+depending on which rig is active, without any per-rig table in `inputs.py`. Instead, the slot
+assignment is read live from a token embedded in the **Kemper rig name** itself, e.g. a rig
+named `Clean ((X-LR))` tells switch 3 to control slot X, tells switch 4 to stay off, and tells
+switch UP to control slots DLY+REV together. Reorganizing which slot a switch controls on a
+given rig only needs a rig rename on the Kemper — no redeploy of this file.
 
-Rigs are identified by their absolute rig ID (`(bank - 1) * 5 + (rig - 1)`). This example uses
-bank 1 with five rigs: 0 = acoustic, 1 = clean, 2 = crunch, 3 = heavy, 4 = lead. `rig_overrides`
-maps a rig ID to one slot ID, a list of slot IDs (combined with AND — the button turns the LED
-on only if all of them are engaged), or is simply left out for a rig to fall back to `slot_id`
-(here `None`, so the button is off and the display is cleared on any rig without an override).
+Each switch reads one or more fixed digit position(s) of the token (1-indexed, letters ->
+slots: `A,B,C,D,X` map directly, `MOD` -> `M`, `DLY` -> `L`, `REV` -> `R`; any other character,
+by convention `-`, disables the switch for that rig). This example uses a 4-character token:
+
+| Position | Used by            |
+|----------|---------------------|
+| 1        | Switch 3            |
+| 2        | Switch 4            |
+| 3 + 4    | Switch UP (AND logic) |
+
+To reproduce the behavior below, rename the rigs in bank 1 on the Kemper like this (the
+`((...))` part is stripped automatically from the on-screen rig name label):
+
+| Rig | Suggested name       | Switch 3 | Switch 4 | Switch UP |
+|-----|-----------------------|----------|----------|-----------|
+| 1   | `Acoustic ((-M--))`   | off      | MOD      | off       |
+| 2   | `Clean ((X-LR))`      | X        | off      | DLY+REV   |
+| 3   | `Crunch ((X-LR))`     | X        | off      | DLY+REV   |
+| 4   | `Heavy ((-XLR))`      | off      | X        | DLY+REV   |
+| 5   | `Lead ((X---))`       | X        | off      | off       |
+
+Switch 4 also sets `default_slot_id = KemperEffectSlot.EFFECT_SLOT_ID_C`: any rig with no
+token at all (or a token shorter than 2 characters) falls back to slot C (Compressor) instead
+of turning off, so most rigs elsewhere on the device get a sensible default without needing to
+be tagged. Explicit `-` in a present, long-enough token (as in rigs 2, 3 and 5 above) still
+disables the switch — it does not fall back to the default.
 
 Switches A-E also demonstrate `BANK_UP`/`BANK_DOWN` on long press, which keep the currently
 selected rig slot when moving to the next/previous bank instead of resetting it.
@@ -17,9 +41,9 @@ selected rig slot when moving to the next/previous bank instead of resetting it.
 |------------|-------------|------------|
 | Switch 1   | (not used)  |            |
 | Switch 2   | (not used)  |            |
-| Switch 3   | FX per rig: flanger (X) on clean/crunch/lead |  |
-| Switch 4   | FX per rig: mod+comp (MOD+C) on acoustic, X on heavy |  |
-| Switch up  | FX per rig: delay (DLY) on acoustic, delay+reverb (DLY+REV) on clean/crunch/heavy |  |
+| Switch 3   | FX per rig token, digit position 1 |  |
+| Switch 4   | FX per rig token, digit position 2 (default: Compressor) |  |
+| Switch up  | FX per rig token, digit positions 3+4 together (AND logic) |  |
 | Switch A   | Select rig 1 of curr. bank | Bank down (keeps rig slot) |
 | Switch B   | Select rig 2 of curr. bank |  |
 | Switch C   | Select rig 3 of curr. bank |  |

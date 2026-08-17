@@ -112,3 +112,70 @@ class TestKemperRigNameCallback(unittest.TestCase):
                 self.assertEqual(label.text, "3-4")
 
 
+class TestKemperRigNameCallbackTokenStripping(unittest.TestCase):
+
+    def _build_label(self, cb, name_value):
+        label = DisplayLabel(
+            layout = {
+                "font": "foo"
+            },
+            callback = cb
+        )
+
+        appl = MockController()
+        ui = MockUiController()
+        label.init(ui, appl)
+
+        mapping_name = [m for m in cb._Callback__mappings if m == KemperMappings.RIG_NAME()][0]
+        mapping_name.value = name_value
+
+        return label
+
+    def test_strip_token_defaults_to_true(self):
+        cb = KemperRigNameCallback(show_name = True)
+        label = self._build_label(cb, "Lead ((ACXR))")
+
+        cb.update_label(label)
+
+        self.assertEqual(label.text, "Lead")
+
+    def test_strip_token_false_keeps_raw_name(self):
+        cb = KemperRigNameCallback(show_name = True, strip_token = False)
+        label = self._build_label(cb, "Lead ((ACXR))")
+
+        cb.update_label(label)
+
+        self.assertEqual(label.text, "Lead ((ACXR))")
+
+    def test_strip_token_no_token_leaves_name_unchanged(self):
+        cb = KemperRigNameCallback(show_name = True)
+        label = self._build_label(cb, "Plain Rig Name")
+
+        cb.update_label(label)
+
+        self.assertEqual(label.text, "Plain Rig Name")
+
+    def test_strip_token_custom_delimiters(self):
+        cb = KemperRigNameCallback(
+            show_name = True,
+            token_start = "[[",
+            token_end = "]]"
+        )
+        label = self._build_label(cb, "Lead [[ACXR]]")
+
+        cb.update_label(label)
+
+        self.assertEqual(label.text, "Lead")
+
+    def test_strip_token_default_delimiters_not_recognized_when_custom_set(self):
+        cb = KemperRigNameCallback(
+            show_name = True,
+            token_start = "[[",
+            token_end = "]]"
+        )
+        label = self._build_label(cb, "Lead ((ACXR))")
+
+        cb.update_label(label)
+
+        self.assertEqual(label.text, "Lead ((ACXR))")
+

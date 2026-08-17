@@ -63,19 +63,77 @@ def NRPN_VALUE(value):
 
 ####################################################################################################################
 
+# Default delimiters for the rig-name slot-assignment token (see EFFECT_STATE_DYNAMIC and
+# KemperRigNameCallback's strip_token option). Double parens by default so users can still
+# use plain "(" / ")" elsewhere in rig names.
+KEMPER_RIG_NAME_TOKEN_START = "(("
+KEMPER_RIG_NAME_TOKEN_END = "))"
+
+
+def _kemper_locate_rig_name_token(rig_name, token_start, token_end):
+    """
+    Returns the (start, end) character indices of token_start/token_end in rig_name (end
+    points at the first character of token_end), or (None, None) if rig_name has no complete,
+    well-formed token.
+    """
+    if not rig_name:
+        return (None, None)
+
+    start = rig_name.find(token_start)
+    if start == -1:
+        return (None, None)
+
+    end = rig_name.find(token_end, start + len(token_start))
+    if end == -1:
+        return (None, None)
+
+    return (start, end)
+
+
+def kemper_parse_rig_name_token(rig_name, token_start = KEMPER_RIG_NAME_TOKEN_START, token_end = KEMPER_RIG_NAME_TOKEN_END):
+    """
+    Returns the content between token_start/token_end in rig_name (an empty string if the
+    token is present but empty), or None if rig_name has no complete token at all.
+    """
+    start, end = _kemper_locate_rig_name_token(rig_name, token_start, token_end)
+    if start is None:
+        return None
+
+    return rig_name[start + len(token_start):end]
+
+
+def kemper_strip_rig_name_token(rig_name, token_start = KEMPER_RIG_NAME_TOKEN_START, token_end = KEMPER_RIG_NAME_TOKEN_END):
+    """
+    Returns rig_name with the token_start/token_end token (if any) and surrounding whitespace
+    removed. Returns rig_name unchanged if it has no complete token.
+    """
+    start, end = _kemper_locate_rig_name_token(rig_name, token_start, token_end)
+    if start is None:
+        return rig_name
+
+    return (rig_name[:start] + rig_name[end + len(token_end):]).strip()
+
+####################################################################################################################
+
 
 # Callback for DisplayLabel to show the rig name and/or ID.
 class KemperRigNameCallback(Callback):
     DEFAULT_TEXT = f"PySwitch { PYSWITCH_VERSION }"   # Deprecated! Dont use this for new configurations! Use f"PySwitch { PYSWITCH_VERSION }" instead.
 
-    def __init__(self, 
+    def __init__(self,
                  show_name = True,     # Show the rig name in the label
-                 show_rig_id = False   # Show the rig ID (like 1-1) in the label. Can be False, 'rig', 'bank' or True (to show both rig and bank)
+                 show_rig_id = False,  # Show the rig ID (like 1-1) in the label. Can be False, 'rig', 'bank' or True (to show both rig and bank)
+                 strip_token = True,   # Strip the ((...)) rig-name slot-assignment token (see EFFECT_STATE_DYNAMIC) before displaying
+                 token_start = KEMPER_RIG_NAME_TOKEN_START,  # Start delimiter of the token to strip (only used when strip_token is True)
+                 token_end = KEMPER_RIG_NAME_TOKEN_END       # End delimiter of the token to strip (only used when strip_token is True)
     ):
         Callback.__init__(self)
 
         # Rig name
         self.__show_name = show_name
+        self.__strip_token = strip_token
+        self.__token_start = token_start
+        self.__token_end = token_end
         if show_name:
             self.__mapping_name = KemperMappings.RIG_NAME()
             self.register_mapping(self.__mapping_name)
@@ -113,6 +171,8 @@ class KemperRigNameCallback(Callback):
         
         if self.__show_name:
             name = self.__mapping_name.value if self.__mapping_name.value else self.DEFAULT_TEXT
+            if self.__strip_token:
+                name = kemper_strip_rig_name_token(name, self.__token_start, self.__token_end)
 
         if self.__show_rig_id and self.__mapping_id.value != None:
             bank = int(self.__mapping_id.value / NUM_RIGS_PER_BANK)

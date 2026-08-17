@@ -1574,16 +1574,26 @@
                 "importPath": "pyswitch.clients.kemper.actions.effect_state_extended_names"
             },
         {
-            "name": "EFFECT_STATE_PER_RIG",
+            "name": "EFFECT_STATE_DYNAMIC",
             "parameters": [
                 {
-                    "name": "slot_id",
+                    "name": "digit_position",
                     "default": null,
                     "comment": null
                 },
                 {
-                    "name": "rig_overrides",
-                    "default": "{}",
+                    "name": "default_slot_id",
+                    "default": "None",
+                    "comment": null
+                },
+                {
+                    "name": "token_start",
+                    "default": "\"((\"",
+                    "comment": null
+                },
+                {
+                    "name": "token_end",
+                    "default": "\"))\"",
                     "comment": null
                 },
                 {
@@ -1627,8 +1637,8 @@
                     "comment": null
                 }
             ],
-            "comment": "Switch an effect slot on / off, with per-rig slot override",
-            "importPath": "pyswitch.clients.kemper.actions.effect_state_per_rig"
+            "comment": "Switch an effect slot on / off, with the slot assigned dynamically from a token embedded in the Kemper rig name",
+            "importPath": "pyswitch.clients.kemper.actions.effect_state_dynamic"
         },
             {
                 "name": "RIG_SELECT_AND_MORPH_STATE",
